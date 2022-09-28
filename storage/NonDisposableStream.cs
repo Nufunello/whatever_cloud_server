@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -10,12 +11,14 @@ namespace storage
     public class NonDisposableStream
         : System.IO.Stream
     {
-        readonly Stream stream;
+        Stream stream;
+        bool isClosed;
 
         public NonDisposableStream(Stream stream)
         {
             this.stream = stream;
             this.stream.Position = 0;
+            this.isClosed = false;
         }
 
         public override bool CanRead => stream.CanRead;
@@ -58,9 +61,22 @@ namespace storage
             Position = 0;
         }
 
+
+        public void RealClose()
+        {
+            if (!isClosed)
+            {
+                using (var d = stream)
+                {
+                    stream = null;
+                }
+                GC.Collect();
+            }
+        }
+
         ~NonDisposableStream()
         {
-            base.Dispose(true);
+            RealClose();
         }
     }
 }

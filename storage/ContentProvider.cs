@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.WindowsAPICodePack.Shell;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -37,11 +38,13 @@ namespace storage
             {
                 "video", (fullpath) =>
                 {
-                    var shellFile = Microsoft.WindowsAPICodePack.Shell.ShellFile.FromFilePath(fullpath);
-                    var properties = shellFile.Properties.System.Video;
-                    return new Size(
-                        unchecked((int)properties.FrameWidth.Value), 
-                        unchecked((int)properties.FrameHeight.Value));
+                    using (var shellFile = ShellFile.FromFilePath(fullpath))
+                    {
+                        var properties = shellFile.Properties.System.Video;
+                        return new Size(
+                            unchecked((int)properties.FrameWidth.Value),
+                            unchecked((int)properties.FrameHeight.Value));
+                    }
                 }
             },
             { "image", (fullpath) => Image.FromFile(fullpath).Size }
@@ -57,10 +60,12 @@ namespace storage
                 {"image", (orig, path) => orig },
                 {"video", (orig, path) =>
                     {
-                        var shellFile = Microsoft.WindowsAPICodePack.Shell.ShellFile.FromFilePath(path);
-                        var stream = new MemoryStream();
-                        shellFile.Thumbnail.Bitmap.Save(stream, ImageFormat.Png);
-                        return new Content { MimeType = this.typeProvider(".png"), Size = orig.Size, Stream = new NonDisposableStream(stream) };
+                        using(var shellFile = ShellFile.FromFilePath(path))
+                        {
+                            var stream = new MemoryStream();
+                            shellFile.Thumbnail.Bitmap.Save(stream, ImageFormat.Png);
+                            return new Content { MimeType = this.typeProvider(".png"), Size = orig.Size, Stream = new NonDisposableStream(stream) };
+                        }
                     }
                 }
             };
@@ -129,7 +134,10 @@ namespace storage
         {
             try
             {
+                var content = this.content[path];
+                content.Stream.RealClose();
                 File.Delete(Path.Combine(root, path));
+                this.content.Remove(path);
             }
             catch (Exception)
             {

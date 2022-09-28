@@ -87,7 +87,8 @@ namespace whatever_cloud
                 };
                 services.Add(contextProvider);
             }
-            {var messager = new messager.RabbitmqMessager(messageService.Channel,
+            {
+                var messager = new messager.RabbitmqMessager(messageService.Channel,
                     receiveRoutingKey: "server/search/content",
                     publishRoutingKey: "client/search/content");
                 var searchMessager = new messager.SearchContentMessager(messager);
