@@ -9,7 +9,7 @@ namespace messager
         readonly string exchange = "amq.direct";
         readonly IModel channel;
         readonly string publishRoutingKey;
-        public RabbitmqMessager(IModel channel, string receiveRoutingKey = "", string publishRoutingKey = "")
+        public RabbitmqMessager(IModel channel, string receiveRoutingKey, string publishRoutingKey)
         {
             this.channel = channel;
             this.publishRoutingKey = publishRoutingKey;
@@ -21,7 +21,17 @@ namespace messager
                 channel.QueueBind(queue: queue, exchange: exchange, receiveRoutingKey);
                 var consumer = new EventingBasicConsumer(channel);
                 consumer.Received += (sender, ea) => { OnMessage?.Invoke(sender, ea.Body); };
-                channel.BasicConsume(queue: queue, consumer: consumer);
+
+                var consumerTag = Guid.NewGuid().ToString();
+                channel.BasicConsume(queue: queue, consumer: consumer, consumerTag: consumerTag);
+                consumer.Shutdown += (s, e) =>
+                {
+                    Console.WriteLine(e.Cause);
+                };
+                consumer.ConsumerCancelled += (s, e) =>
+                {
+                    Console.WriteLine(e.ToString());
+                };
             }
         }
         public event ReceiveMessageHandler OnMessage;
@@ -32,8 +42,12 @@ namespace messager
             {
                 var bytes = System.Text.Encoding.ASCII.GetBytes(body);
                 channel.BasicPublish(exchange: exchange, routingKey: publishRoutingKey, mandatory: false, basicProperties: null, body: bytes);
-                channel.WaitForConfirms();
             }
+        }
+
+        ~RabbitmqMessager()
+        {
+            Console.WriteLine("");
         }
     }
 }

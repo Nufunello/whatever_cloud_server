@@ -317,7 +317,7 @@
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
           <IISUrl>http://localhost:44341/</IISUrl>
           <OverrideIISAppRootUrl>True</OverrideIISAppRootUrl>
-          <IISAppRootUrl>http://192.168.0.100:44341/</IISAppRootUrl>
+          <IISAppRootUrl>http://192.168.0.105:44341/</IISAppRootUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>
@@ -338,8 +338,8 @@
     </PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>mkdir "$(TargetDir)content"
-copy  "$(SolutionDir)content\*" "$(TargetDir)content"</PostBuildEvent>
+    <PostBuildEvent>mkdir "$(ProjectDir)App_Data\content"
+copy  "$(SolutionDir)content\*" "$(ProjectDir)App_Data\content"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.

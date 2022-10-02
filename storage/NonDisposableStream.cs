@@ -70,7 +70,6 @@ namespace storage
                 {
                     stream = null;
                 }
-                GC.Collect();
             }
         }
 

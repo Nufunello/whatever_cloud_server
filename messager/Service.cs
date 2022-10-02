@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace messager
@@ -18,15 +19,18 @@ namespace messager
             var factory = new ConnectionFactory { HostName = hostname };
             connection = factory.CreateConnection();
             channel = connection.CreateModel();
-            channel.ConfirmSelect();
         }
 
-        public IModel Channel { get { return channel; } }
+        public IModel Channel => channel;
 
         public void Dispose()
         {
             channel.Dispose();
             connection.Dispose();
+        }
+        ~Service()
+        {
+            Console.WriteLine("Destructe");
         }
     }
 }

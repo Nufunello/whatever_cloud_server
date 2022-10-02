@@ -1,6 +1,7 @@
 ﻿using storage;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 namespace search
 {
     public delegate void FilesUpdated();
-    public delegate void FileRemoved(object sender, string path);
+    public delegate void FileRemoved(object sender, IEnumerable<string> path);
     public interface IContext
     {
         string GetFilePath(int index);
@@ -16,7 +17,7 @@ namespace search
         event FilesUpdated FilesUpdated;
         event FileRemoved FileRemoved;
         void UpdateFiles(IEnumerable<string> files);
-        void RemoveFile(int index);
+        void RemoveFile(IEnumerable<int> index);
     }
     public class Context
         : IContext
@@ -46,9 +47,12 @@ namespace search
             return files.Count();
         }
 
-        public void RemoveFile(int index)
+        public void RemoveFile(IEnumerable<int> indexes)
         {
-            FileRemoved?.Invoke(this, files.ElementAt(index));
+            FileRemoved?.Invoke(this, indexes
+                .Select(index => files.ElementAt(index))
+                .OrderBy(x => x)
+            );
         }
     }
     public class Pattern
@@ -73,9 +77,16 @@ namespace search
             {
                 context.UpdateFiles(contentProvider.EnumerateFileSystemEntries(pattern.Path, pattern.Name, searchOption));
             });
-            context.FileRemoved += (sender, path) =>
+            context.FileRemoved += (sender, pathes) =>
             {
-                contentProvider.DeleteContent(path);
+                foreach (var path in pathes.Skip(1))
+                {
+                    contentProvider.DeleteContent(path, false);
+                }
+                if (pathes.Count() > 0)
+                {
+                    contentProvider.DeleteContent(pathes.First(), true);
+                }
             };
             return context;
         }

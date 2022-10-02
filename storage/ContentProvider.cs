@@ -47,7 +47,15 @@ namespace storage
                     }
                 }
             },
-            { "image", (fullpath) => Image.FromFile(fullpath).Size }
+            {   
+                "image", (fullpath) =>
+                {
+                    using (var image = Image.FromFile(fullpath))
+                    { 
+                        return image.Size;
+                    } 
+                }
+            }
         };
         readonly Dictionary<string, Func<Content, string, Content>> thumbnail;
         public ContentProvider(string root, Func<string, string> typeProvider)
@@ -82,7 +90,15 @@ namespace storage
 
                 var type = typeProvider(path);
                 var shortType = type.Substring(0, type.IndexOf('/'));
-                var size = ContentProvider.size[shortType](fullpath);
+                Size size;
+                try
+                {
+                    size = ContentProvider.size[shortType](fullpath);
+                }
+                catch (KeyNotFoundException) 
+                {
+                   size = new Size();
+                }
                 var content = new Content
                 {
                     MimeType = type,
@@ -130,24 +146,30 @@ namespace storage
             }
         }
 
-        public bool DeleteContent(string path)
+        public bool DeleteContent(string path, bool notify = true)
         {
-            try
+            if (this.content.ContainsKey(path))
             {
                 var content = this.content[path];
                 content.Stream.RealClose();
-                File.Delete(Path.Combine(root, path));
                 this.content.Remove(path);
+            }
+            try
+            {
+                File.Delete(Path.Combine(root, path));
+                if (notify)
+                {
+                    Notify(path);
+                }
+                return true;
             }
             catch (Exception)
             {
                 return false;
             }
-            Notify(path);
-            return true;
         }
 
-        public bool SaveContent(string path, Stream content)
+        public bool SaveContent(string path, Stream content, bool notify = true)
         {
             var output = Path.Combine(root, path);
             using (var stream = File.Create(output))
@@ -158,7 +180,10 @@ namespace storage
             {
                 return false;
             }
-            Notify(path);
+            if (notify)
+            {
+                Notify(path);
+            }
             return true;
         }
 
