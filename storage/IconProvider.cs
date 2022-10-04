@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -18,17 +20,36 @@ namespace storage
         private Content CreateContent(string path)
         {
             var content = this.content.GetThumbnail(path);
+            if (content.RotateFlipType != RotateFlipType.RotateNoneFlipNone)
+            {
+                using (var orig = Image.FromStream(content.Stream))
+                {
+                    orig.RotateFlip(content.RotateFlipType);
+
+                    var tmp = new MemoryStream();
+                    orig.Save(tmp, ImageFormat.Png);
+
+                    content = new Content
+                    {
+                        Stream = new NonDisposableStream(tmp),
+                        MimeType = content.MimeType,
+                        Size = content.Size
+                    };
+                }
+            }
             icons.Add(path, new List<Content> { content });
             return content;
         }
         private Content Resize(Content content, System.Drawing.Size size)
         {
-            var image = System.Drawing.Image.FromStream(content.Stream, true, true);
-            var resizedImage = image.GetThumbnailImage(size.Width, size.Height, null, IntPtr.Zero);
-            var stream = new MemoryStream();
-            resizedImage.Save(stream, image.RawFormat); 
-            stream.Position = 0;
-            return new Content { Stream = new NonDisposableStream(stream), MimeType = content.MimeType, Size = size };
+            using (var image = Image.FromStream(content.Stream, true, true))
+            {
+                var resizedImage = image.GetThumbnailImage(size.Width, size.Height, null, IntPtr.Zero);
+                var stream = new MemoryStream();
+                resizedImage.Save(stream, image.RawFormat);
+                stream.Position = 0;
+                return new Content { Stream = new NonDisposableStream(stream), MimeType = content.MimeType, Size = size };
+            }
         }
         public Content GetIcon(string path, int width, int height)
         {

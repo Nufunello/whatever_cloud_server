@@ -41,10 +41,10 @@ namespace whatever_cloud_server.Controllers
             return true;
         }
         [HttpPost]
-        public System.Web.Mvc.ActionResult Post()
+        public async System.Threading.Tasks.Task<System.Web.Mvc.ActionResult> Post()
         {
             var provider = new MultipartMemoryStreamProvider();
-            Request.Content.ReadAsMultipartAsync(provider).Wait();
+            await Request.Content.ReadAsMultipartAsync(provider);
             var files = provider.Contents;
             if (files == null || files.Count == 0)
             {

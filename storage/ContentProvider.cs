@@ -5,8 +5,6 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
-using System.Windows.Media.Imaging;
 
 namespace storage
 {
@@ -15,6 +13,7 @@ namespace storage
         public string MimeType { get; set; }
         public NonDisposableStream Stream { get; set; }
         public Size Size { get; set; }
+        public RotateFlipType RotateFlipType { get; set; } = RotateFlipType.RotateNoneFlipNone;
     }
     public enum FileStatus
     {
@@ -50,13 +49,37 @@ namespace storage
             {   
                 "image", (fullpath) =>
                 {
-                    using (var image = Image.FromFile(fullpath))
-                    { 
-                        return image.Size;
-                    } 
+                    using (var shellFile = ShellFile.FromFilePath(fullpath))
+                    {
+                        var properties = shellFile.Properties.System.Image;
+                        return new Size(
+                            width: unchecked((int)properties.HorizontalSize.Value),
+                            height: unchecked((int)properties.VerticalSize.Value)
+                        );
+                    }
                 }
             }
         };
+        static RotateFlipType Rotate(string fullpath)
+        {
+            using (var shellFile = ShellFile.FromFilePath(fullpath))
+            {
+                switch (shellFile.Properties.System.Photo.Orientation.Value)
+                {
+                    case 2: return RotateFlipType.RotateNoneFlipX;
+                    case 3: return RotateFlipType.Rotate180FlipNone;
+
+                    case 4: return RotateFlipType.Rotate180FlipX;
+                    case 5: return RotateFlipType.Rotate90FlipX;
+
+                    case 6: return RotateFlipType.Rotate90FlipNone;
+                    case 7: return RotateFlipType.Rotate270FlipX;
+
+                    case 8: return RotateFlipType.Rotate270FlipNone;
+                    default: return RotateFlipType.RotateNoneFlipNone;
+                }
+            }
+        }
         readonly Dictionary<string, Func<Content, string, Content>> thumbnail;
         public ContentProvider(string root, Func<string, string> typeProvider)
         {
@@ -99,11 +122,13 @@ namespace storage
                 {
                    size = new Size();
                 }
+
                 var content = new Content
                 {
                     MimeType = type,
                     Stream = new NonDisposableStream(File.OpenRead(fullpath)),
-                    Size = size
+                    Size = size,
+                    RotateFlipType = Rotate(fullpath)
                 };
                 this.content.Add(path, content);
                 return content;

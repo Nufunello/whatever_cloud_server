@@ -19,6 +19,10 @@ namespace messager
             var factory = new ConnectionFactory { HostName = hostname };
             connection = factory.CreateConnection();
             channel = connection.CreateModel();
+            channel.ModelShutdown += (sender, args) =>
+            {
+                Console.WriteLine("");
+            };
         }
 
         public IModel Channel => channel;
