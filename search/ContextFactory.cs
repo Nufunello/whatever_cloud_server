@@ -51,7 +51,7 @@ namespace search
         {
             FileRemoved?.Invoke(this, indexes
                 .Select(index => files.ElementAt(index))
-                .OrderBy(x => x)
+                .ToArray()
             );
         }
     }

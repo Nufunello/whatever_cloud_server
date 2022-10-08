@@ -21,6 +21,7 @@ namespace whatever_cloud_server.Controllers
             var file = Services.ContentProvider.GetContent(id);
             var result = new HttpResponseMessage(HttpStatusCode.OK);
             var stream = file.Stream;
+            stream.Position = 0;
             result.Content = new StreamContent(stream);
             result.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment");
             result.Content.Headers.ContentDisposition.FileName = id;
