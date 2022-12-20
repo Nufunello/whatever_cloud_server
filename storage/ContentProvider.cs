@@ -155,7 +155,7 @@ namespace storage
             }
         }
 
-        private void Notify(string path)
+        public void Notify(string path)
         {
             var dir = Path.GetDirectoryName(path);
             if (!OnSearchRequest.ContainsKey(dir))

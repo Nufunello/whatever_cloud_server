@@ -51,20 +51,18 @@ namespace whatever_cloud_server.Controllers
             {
                 return new System.Web.Mvc.HttpStatusCodeResult(HttpStatusCode.BadRequest, "No files were received");
             }
-            foreach (var file in files.Skip(1))
+            foreach (var file in files)
             {
-                if (!saveContent(file, false))
+                try
                 {
-                    return new System.Web.Mvc.HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                    if (!saveContent(file, false))
+                    {
+                        return new System.Web.Mvc.HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                    }
                 }
+                catch (Exception) { }
             }
-            if (files.Count > 0)
-            {
-                if (!saveContent(files.First(), true))
-                {
-                    return new System.Web.Mvc.HttpStatusCodeResult(HttpStatusCode.BadRequest);
-                }
-            }
+            Services.ContentProvider.Notify(".");
             return new System.Web.Mvc.HttpStatusCodeResult(HttpStatusCode.OK);
         }
     }
